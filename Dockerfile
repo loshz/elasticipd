@@ -3,7 +3,7 @@ LABEL maintainer="danbondd@gmail.com"
 RUN mkdir -p /go/src/github.com/danbondd/elasticipd
 COPY . /go/src/github.com/danbondd/elasticipd
 WORKDIR /go/src/github.com/danbondd/elasticipd
-RUN go install
+RUN go build -o /go/bin/elasticipd
 
 FROM alpine
 # Manually add dependencies

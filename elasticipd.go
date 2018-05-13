@@ -74,6 +74,7 @@ func checkElasticIPAssignment(c *ipChecker, shutdown bool) {
 		return
 	}
 
+	// don't associate the Elastic IP if shutting down.
 	if !shutdown {
 		if err := c.associateAddr(c.ip, ad.allocationID, ad.instanceID); err != nil {
 			log.Println(err)
@@ -104,35 +105,37 @@ type ipChecker struct {
 	ip          string
 }
 
+// describeAddr gets allocation and association information about the
+// given Elastic IP address and the current EC2 instance.
 func (c *ipChecker) describeAddr(ip string) (ad asscDetails, err error) {
-	ident, err := c.ec2metadata.GetInstanceIdentityDocument()
-	if err != nil {
-		return ad, fmt.Errorf("error getting instance identity document: %v", err)
-	}
-	log.Printf("found instance ID: %s", ident.InstanceID)
-
 	descRes, err := c.ec2.DescribeAddresses(&ec2.DescribeAddressesInput{
 		PublicIps: aws.StringSlice([]string{ip}),
 	})
 	if err != nil {
 		return ad, fmt.Errorf("error describing address: %v", err)
 	}
-	if len(descRes.Addresses) != 1 {
+	if len(descRes.Addresses) == 0 {
 		return ad, fmt.Errorf("failed to find address: %s", ip)
 	}
 	addr := descRes.Addresses[0]
 	if addr.InstanceId == nil {
 		return ad, errors.New("InstanceId is nil")
 	}
-	if *addr.InstanceId == ident.InstanceID {
-		return ad, errAssociated
-	}
-
 	if addr.AssociationId == nil {
 		return ad, errors.New("AssociationId is nil")
 	}
 	if addr.AllocationId == nil {
 		return ad, errors.New("AllocationId is nil")
+	}
+
+	ident, err := c.ec2metadata.GetInstanceIdentityDocument()
+	if err != nil {
+		return ad, fmt.Errorf("error getting instance identity document: %v", err)
+	}
+	log.Printf("found instance ID: %s", ident.InstanceID)
+
+	if *addr.InstanceId == ident.InstanceID {
+		return ad, errAssociated
 	}
 
 	ad = asscDetails{
@@ -143,6 +146,7 @@ func (c *ipChecker) describeAddr(ip string) (ad asscDetails, err error) {
 	return ad, nil
 }
 
+// associateAddr will attempt to associate an Elastic IP address to an EC2 instance.
 func (c *ipChecker) associateAddr(ip, allocationID, instanceID string) error {
 	_, err := c.ec2.AssociateAddress(&ec2.AssociateAddressInput{
 		AllocationId: aws.String(allocationID),
@@ -155,6 +159,7 @@ func (c *ipChecker) associateAddr(ip, allocationID, instanceID string) error {
 	return nil
 }
 
+// disassociateAddr will attempt to disassociate an Elastic IP address to an EC2 instance.
 func (c *ipChecker) disassociateAddr(ip, associationID, instanceID string) error {
 	if associationID == "" {
 		return nil

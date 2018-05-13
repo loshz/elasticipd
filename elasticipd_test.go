@@ -50,20 +50,7 @@ func TestDescribeAddress(t *testing.T) {
 	e := "describe address error"
 
 	testTable := make(map[string]fixture)
-	testTable["TestGetError"] = fixture{
-		metadata: mockMetadata{
-			GetFunc: func() (ec2metadata.EC2InstanceIdentityDocument, error) {
-				return ec2metadata.EC2InstanceIdentityDocument{}, errors.New(e)
-			},
-		},
-		err: fmt.Errorf("error getting instance identity document: %s", e),
-	}
 	testTable["TestDescribeAddressesError"] = fixture{
-		metadata: mockMetadata{
-			GetFunc: func() (ec2metadata.EC2InstanceIdentityDocument, error) {
-				return ec2metadata.EC2InstanceIdentityDocument{}, nil
-			},
-		},
 		ec2: mockEC2{
 			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
 				return &ec2.DescribeAddressesOutput{}, errors.New(e)
@@ -72,11 +59,6 @@ func TestDescribeAddress(t *testing.T) {
 		err: fmt.Errorf("error describing address: %s", e),
 	}
 	testTable["TestAddressesLengthError"] = fixture{
-		metadata: mockMetadata{
-			GetFunc: func() (ec2metadata.EC2InstanceIdentityDocument, error) {
-				return ec2metadata.EC2InstanceIdentityDocument{}, nil
-			},
-		},
 		ec2: mockEC2{
 			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
 				return &ec2.DescribeAddressesOutput{}, nil
@@ -84,22 +66,93 @@ func TestDescribeAddress(t *testing.T) {
 		},
 		err: fmt.Errorf("failed to find address: %s", ip),
 	}
-	testTable["TestAssociatedInstanceError"] = fixture{
-		metadata: mockMetadata{
-			GetFunc: func() (ec2metadata.EC2InstanceIdentityDocument, error) {
-				return ec2metadata.EC2InstanceIdentityDocument{
-					InstanceID: "1",
-				}, nil
-			},
-		},
+	testTable["TestInstanceIdNilError"] = fixture{
 		ec2: mockEC2{
 			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
 				return &ec2.DescribeAddressesOutput{
 					Addresses: []*ec2.Address{
 						&ec2.Address{
-							InstanceId: aws.String("1"),
+							InstanceId:    nil,
+							AssociationId: aws.String("2"),
+							AllocationId:  aws.String("3"),
 						},
 					},
+				}, nil
+			},
+		},
+		err: errors.New("InstanceId is nil"),
+	}
+	testTable["TestAssociationIdNilError"] = fixture{
+		ec2: mockEC2{
+			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
+				return &ec2.DescribeAddressesOutput{
+					Addresses: []*ec2.Address{
+						&ec2.Address{
+							InstanceId:    aws.String("1"),
+							AssociationId: nil,
+							AllocationId:  aws.String("3"),
+						},
+					},
+				}, nil
+			},
+		},
+		err: errors.New("AssociationId is nil"),
+	}
+	testTable["TestAllocationIdNilError"] = fixture{
+		ec2: mockEC2{
+			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
+				return &ec2.DescribeAddressesOutput{
+					Addresses: []*ec2.Address{
+						&ec2.Address{
+							InstanceId:    aws.String("1"),
+							AssociationId: aws.String("2"),
+							AllocationId:  nil,
+						},
+					},
+				}, nil
+			},
+		},
+		err: errors.New("AllocationId is nil"),
+	}
+	testTable["TestGetIdentityDocumentError"] = fixture{
+		ec2: mockEC2{
+			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
+				return &ec2.DescribeAddressesOutput{
+					Addresses: []*ec2.Address{
+						&ec2.Address{
+							InstanceId:    aws.String("1"),
+							AssociationId: aws.String("2"),
+							AllocationId:  aws.String("3"),
+						},
+					},
+				}, nil
+			},
+		},
+		metadata: mockMetadata{
+			GetFunc: func() (ec2metadata.EC2InstanceIdentityDocument, error) {
+				return ec2metadata.EC2InstanceIdentityDocument{}, errors.New(e)
+			},
+		},
+		err: fmt.Errorf("error getting instance identity document: %s", e),
+	}
+	testTable["TestAssociatedInstanceError"] = fixture{
+		ec2: mockEC2{
+			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
+				return &ec2.DescribeAddressesOutput{
+					Addresses: []*ec2.Address{
+						&ec2.Address{
+							InstanceId:    aws.String("1"),
+							AssociationId: aws.String("2"),
+							AllocationId:  aws.String("3"),
+						},
+					},
+				}, nil
+			},
+		},
+		metadata: mockMetadata{
+			GetFunc: func() (ec2metadata.EC2InstanceIdentityDocument, error) {
+				return ec2metadata.EC2InstanceIdentityDocument{
+					InstanceID: "1",
 				}, nil
 			},
 		},

@@ -1,7 +1,8 @@
 FROM golang:alpine
 LABEL maintainer="danbondd@gmail.com"
 RUN mkdir -p /go/src/github.com/danbondd/elasticipd
-COPY . /go/src/github.com/elasticipd
+COPY . /go/src/github.com/danbondd/elasticipd
+WORKDIR /go/src/github.com/danbondd/elasticipd
 RUN go install
 
 FROM alpine

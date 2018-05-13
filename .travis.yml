@@ -1,0 +1,19 @@
+language: go
+os:
+- linux
+services:
+- docker
+go:
+- "1.10.x"
+script:
+- go test -v ./...
+branches:
+  only:
+  - master
+deploy:
+  provider: script
+  script: ./docker.sh
+  on:
+    branch: master
+notifications:
+  email: false

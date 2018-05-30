@@ -1,4 +1,4 @@
-package elasticipd
+package main
 
 import (
 	"errors"

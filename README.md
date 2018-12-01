@@ -1,4 +1,4 @@
-# elasticipd [![Build Status](https://travis-ci.org/danbondd/elasticipd.svg?branch=master)](https://travis-ci.org/danbondd/elasticipd)
+# elasticipd [![Build Status](https://travis-ci.org/syscll/elasticipd.svg?branch=master)](https://travis-ci.org/syscll/elasticipd)
 
 As it is now common practice to run applications on top of a container-orchestration system, such as Kubernetes, there is no guarantee that a servive will always run on the same host. This can cause problems when a service requiring a public IP address gets rescheduled.
 

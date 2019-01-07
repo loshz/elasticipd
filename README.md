@@ -24,7 +24,7 @@ spec:
   - name: public-service
     image: public-service
   - name: elasticipd
-    image: danbondd/elasticipd:latest
+    image: syscll/elasticipd
     command:
     - elasticipd
     env:

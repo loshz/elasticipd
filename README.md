@@ -1,6 +1,6 @@
 # elasticipd [![Build Status](https://travis-ci.org/syscll/elasticipd.svg?branch=master)](https://travis-ci.org/syscll/elasticipd)
 
-As it is now common practice to run applications on top of a container-orchestration system, such as Kubernetes, there is no guarantee that a servive will always run on the same host. This can cause problems when a service requiring a public IP address gets rescheduled.
+As it is now common practice to run applications on top of a container-orchestration platforms, such as Kubernetes, there is no guarantee that a service will always run on the same host. This can cause problems when a service requiring a public IP address gets rescheduled.
 
 `elasticipd` automatically associates an [Elastic IP](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html) address to the AWS EC2 instance running this service. It is designed to run as a sidecar container alongisde a service that requires a public IP address.
 

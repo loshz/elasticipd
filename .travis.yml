@@ -19,3 +19,5 @@ deploy:
     branch: master
 notifications:
   email: false
+env:
+- GO111MODULE=on

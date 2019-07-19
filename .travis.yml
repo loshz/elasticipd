@@ -5,6 +5,8 @@ services:
 - docker
 go:
 - 1.12.x
+before_script:
+- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 script:
 - go test -v ./...
 branches:

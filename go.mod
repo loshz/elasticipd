@@ -1,5 +1,5 @@
 module github.com/syscll/elasticipd
 
-go 1.12
+go 1.15
 
-require github.com/aws/aws-sdk-go v1.21.0
+require github.com/aws/aws-sdk-go v1.25.0

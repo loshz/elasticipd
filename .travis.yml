@@ -4,20 +4,11 @@ os:
 services:
 - docker
 go:
-- 1.12.x
-before_script:
-- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+- 1.15.x
 script:
 - go test -v ./...
 branches:
   only:
   - master
-deploy:
-  provider: script
-  script: ./docker.sh
-  on:
-    branch: master
 notifications:
   email: false
-env:
-- GO111MODULE=on

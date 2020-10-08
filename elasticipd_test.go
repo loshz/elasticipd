@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -47,16 +48,16 @@ type fixture struct {
 }
 
 func TestDescribeAddress(t *testing.T) {
-	e := "describe address error"
+	t.Parallel()
 
 	testTable := make(map[string]fixture)
 	testTable["TestDescribeAddressesError"] = fixture{
 		ec2: mockEC2{
 			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
-				return &ec2.DescribeAddressesOutput{}, errors.New(e)
+				return &ec2.DescribeAddressesOutput{}, fmt.Errorf("describe address error")
 			},
 		},
-		err: fmt.Errorf("error describing address: %s", e),
+		err: fmt.Errorf("error describing address"),
 	}
 	testTable["TestAddressesLengthError"] = fixture{
 		ec2: mockEC2{
@@ -64,7 +65,7 @@ func TestDescribeAddress(t *testing.T) {
 				return &ec2.DescribeAddressesOutput{}, nil
 			},
 		},
-		err: fmt.Errorf("failed to find address: %s", ip),
+		err: fmt.Errorf("failed to find address info"),
 	}
 	testTable["TestInstanceIdNilError"] = fixture{
 		ec2: mockEC2{
@@ -130,33 +131,10 @@ func TestDescribeAddress(t *testing.T) {
 		},
 		metadata: mockMetadata{
 			GetFunc: func() (ec2metadata.EC2InstanceIdentityDocument, error) {
-				return ec2metadata.EC2InstanceIdentityDocument{}, errors.New(e)
+				return ec2metadata.EC2InstanceIdentityDocument{}, fmt.Errorf("describe address error")
 			},
 		},
-		err: fmt.Errorf("error getting instance identity document: %s", e),
-	}
-	testTable["TestAssociatedInstanceError"] = fixture{
-		ec2: mockEC2{
-			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
-				return &ec2.DescribeAddressesOutput{
-					Addresses: []*ec2.Address{
-						&ec2.Address{
-							InstanceId:    aws.String("1"),
-							AssociationId: aws.String("2"),
-							AllocationId:  aws.String("3"),
-						},
-					},
-				}, nil
-			},
-		},
-		metadata: mockMetadata{
-			GetFunc: func() (ec2metadata.EC2InstanceIdentityDocument, error) {
-				return ec2metadata.EC2InstanceIdentityDocument{
-					InstanceID: "1",
-				}, nil
-			},
-		},
-		err: errAssociated,
+		err: fmt.Errorf("error getting instance identity document"),
 	}
 	testTable["TestSuccess"] = fixture{
 		metadata: mockMetadata{
@@ -183,13 +161,15 @@ func TestDescribeAddress(t *testing.T) {
 
 	for name, test := range testTable {
 		t.Run(name, func(t *testing.T) {
-			c := &ipChecker{
+			t.Parallel()
+
+			svc := awsSvc{
 				ec2:         test.ec2,
 				ec2metadata: test.metadata,
 			}
 
-			_, err := c.describeAddr(ip)
-			if test.err != nil && test.err.Error() != err.Error() {
+			_, err := svc.describeAddr(ip)
+			if test.err != nil && !strings.Contains(err.Error(), test.err.Error()) {
 				t.Errorf("expected error: '%v', got: '%v'", test.err, err)
 			}
 			if test.err == nil && err != nil {
@@ -200,16 +180,16 @@ func TestDescribeAddress(t *testing.T) {
 }
 
 func TestAssociateAddress(t *testing.T) {
-	e := "error associating address"
+	t.Parallel()
 
 	testTable := make(map[string]fixture)
 	testTable["TestAssociateError"] = fixture{
 		ec2: mockEC2{
 			AssociateFunc: func(*ec2.AssociateAddressInput) (*ec2.AssociateAddressOutput, error) {
-				return &ec2.AssociateAddressOutput{}, errors.New(e)
+				return &ec2.AssociateAddressOutput{}, fmt.Errorf("error associating address")
 			},
 		},
-		err: fmt.Errorf("failed to associate address %s: %v", ip, e),
+		err: fmt.Errorf("failed to associate address"),
 	}
 	testTable["TestSuccess"] = fixture{
 		ec2: mockEC2{
@@ -221,12 +201,14 @@ func TestAssociateAddress(t *testing.T) {
 
 	for name, test := range testTable {
 		t.Run(name, func(t *testing.T) {
-			c := &ipChecker{
+			t.Parallel()
+
+			svc := awsSvc{
 				ec2: test.ec2,
 			}
 
-			err := c.associateAddr(ip, "1", "2")
-			if test.err != nil && test.err.Error() != err.Error() {
+			err := svc.associateAddr("association", "instance")
+			if test.err != nil && !strings.Contains(err.Error(), test.err.Error()) {
 				t.Errorf("expected error: '%v', got: '%v'", test.err, err)
 			}
 			if test.err == nil && err != nil {
@@ -237,16 +219,16 @@ func TestAssociateAddress(t *testing.T) {
 }
 
 func TestDisassociateAddress(t *testing.T) {
-	e := "error disassociating address"
+	t.Parallel()
 
 	testTable := make(map[string]fixture)
 	testTable["TestDisassociateError"] = fixture{
 		ec2: mockEC2{
 			DisassociateFunc: func(*ec2.DisassociateAddressInput) (*ec2.DisassociateAddressOutput, error) {
-				return &ec2.DisassociateAddressOutput{}, errors.New(e)
+				return &ec2.DisassociateAddressOutput{}, fmt.Errorf("error disassociating address")
 			},
 		},
-		err: fmt.Errorf("failed to disassociate address %s: %v", ip, e),
+		err: fmt.Errorf("failed to disassociate address"),
 	}
 	testTable["TestSuccess"] = fixture{
 		ec2: mockEC2{
@@ -258,12 +240,14 @@ func TestDisassociateAddress(t *testing.T) {
 
 	for name, test := range testTable {
 		t.Run(name, func(t *testing.T) {
-			c := &ipChecker{
+			t.Parallel()
+
+			svc := awsSvc{
 				ec2: test.ec2,
 			}
 
-			err := c.disassociateAddr(ip, "1", "2")
-			if test.err != nil && test.err.Error() != err.Error() {
+			err := svc.disassociateAddr("associationID")
+			if test.err != nil && !strings.Contains(err.Error(), test.err.Error()) {
 				t.Errorf("expected error: '%v', got: '%v'", test.err, err)
 			}
 			if test.err == nil && err != nil {

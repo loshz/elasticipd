@@ -67,38 +67,6 @@ func TestDescribeAddress(t *testing.T) {
 		},
 		err: fmt.Errorf("failed to find address info"),
 	}
-	testTable["TestInstanceIdNilError"] = fixture{
-		ec2: mockEC2{
-			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
-				return &ec2.DescribeAddressesOutput{
-					Addresses: []*ec2.Address{
-						&ec2.Address{
-							InstanceId:    nil,
-							AssociationId: aws.String("2"),
-							AllocationId:  aws.String("3"),
-						},
-					},
-				}, nil
-			},
-		},
-		err: errors.New("InstanceId is nil"),
-	}
-	testTable["TestAssociationIdNilError"] = fixture{
-		ec2: mockEC2{
-			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
-				return &ec2.DescribeAddressesOutput{
-					Addresses: []*ec2.Address{
-						&ec2.Address{
-							InstanceId:    aws.String("1"),
-							AssociationId: nil,
-							AllocationId:  aws.String("3"),
-						},
-					},
-				}, nil
-			},
-		},
-		err: errors.New("AssociationId is nil"),
-	}
 	testTable["TestAllocationIdNilError"] = fixture{
 		ec2: mockEC2{
 			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
@@ -113,7 +81,7 @@ func TestDescribeAddress(t *testing.T) {
 				}, nil
 			},
 		},
-		err: errors.New("AllocationId is nil"),
+		err: errors.New("Allocation ID is nil"),
 	}
 	testTable["TestGetIdentityDocumentError"] = fixture{
 		ec2: mockEC2{
@@ -161,8 +129,6 @@ func TestDescribeAddress(t *testing.T) {
 
 	for name, test := range testTable {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
 			svc := awsSvc{
 				ec2:         test.ec2,
 				ec2metadata: test.metadata,
@@ -189,7 +155,7 @@ func TestAssociateAddress(t *testing.T) {
 				return &ec2.AssociateAddressOutput{}, fmt.Errorf("error associating address")
 			},
 		},
-		err: fmt.Errorf("failed to associate address"),
+		err: fmt.Errorf("failed to associate Elastic IP"),
 	}
 	testTable["TestSuccess"] = fixture{
 		ec2: mockEC2{
@@ -201,8 +167,6 @@ func TestAssociateAddress(t *testing.T) {
 
 	for name, test := range testTable {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
 			svc := awsSvc{
 				ec2: test.ec2,
 			}
@@ -228,7 +192,7 @@ func TestDisassociateAddress(t *testing.T) {
 				return &ec2.DisassociateAddressOutput{}, fmt.Errorf("error disassociating address")
 			},
 		},
-		err: fmt.Errorf("failed to disassociate address"),
+		err: fmt.Errorf("failed to disassociate Elastic IP"),
 	}
 	testTable["TestSuccess"] = fixture{
 		ec2: mockEC2{
@@ -240,8 +204,6 @@ func TestDisassociateAddress(t *testing.T) {
 
 	for name, test := range testTable {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
 			svc := awsSvc{
 				ec2: test.ec2,
 			}

@@ -1,14 +1,10 @@
-language: go
-os:
-- linux
+language: shell
+arch: amd64 
+os: linux
+dist: focal
 services:
 - docker
-go:
-- 1.15.x
 script:
-- go test -v ./...
-branches:
-  only:
-  - master
+- docker build --tag syscll/elasticipd .
 notifications:
   email: false

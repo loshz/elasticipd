@@ -13,11 +13,10 @@ import (
 // assignElasticIP configures an AWS session and attempts to disassociate the
 // given IP from any current associations, and associate it to the current
 // EC2 instance.
-func assignElasticIP(ip string, shutdown bool) error {
-	sess, err := session.NewSession()
-	if err != nil {
-		return fmt.Errorf("error creating aws session: %w", err)
-	}
+func assignElasticIP(region, ip string, shutdown bool) error {
+	sess := session.Must(session.NewSession(&aws.Config{
+		Region: aws.String(region),
+	}))
 
 	svc := awsSvc{
 		ec2:         ec2.New(sess),
@@ -26,28 +25,29 @@ func assignElasticIP(ip string, shutdown bool) error {
 
 	assc, err := svc.describeAddr(ip)
 	if err != nil {
-		return fmt.Errorf("error describing address: %w", err)
+		return fmt.Errorf("error getting information about current allocations: %w", err)
 	}
 
-	// is the ip address is already associated to the current ec2 instance, skip
-	if assc.skippable {
+	// if the Elastic IP is already associated to the current EC2 instance, skip
+	if assc.skippable && !shutdown {
+		log.Printf("Elastic IP: %s associated to current instance: %s", ip, assc.instance)
 		return nil
 	}
 
-	// if there is no current association, skip
-	if assc.id == "" {
+	// if Association ID is present, we can attempt to disassociate
+	if assc.id != "" {
 		if err := svc.disassociateAddr(assc.id); err != nil {
-			return fmt.Errorf("error disassociating address: %w", err)
+			return fmt.Errorf("error disassociating Elastic IP: %w", err)
 		}
-		log.Printf("successfully disassociated address: %s from instance: %s", ip, assc.instance)
+		log.Printf("successfully disassociated Elastic IP: %s from instance: %s", ip, assc.instance)
 	}
 
-	// don't associate the elastic ip if shutting down
+	// don't associate the Elastic IP if shutting down
 	if !shutdown {
 		if err := svc.associateAddr(assc.allocation, assc.instance); err != nil {
-			return fmt.Errorf("error associating address: %w", err)
+			return fmt.Errorf("error associating Elastic IP: %w", err)
 		}
-		log.Printf("successfully associated address: %s to instance: %s", ip, assc.instance)
+		log.Printf("successfully associated Elastic IP: %s to instance: %s", ip, assc.instance)
 	}
 
 	return nil
@@ -102,19 +102,13 @@ func (svc awsSvc) describeAddr(ip string) (*association, error) {
 		return nil, fmt.Errorf("failed to find address info")
 	}
 
-	// check for valid association details
+	// check for valid Allocation ID
 	addr := res.Addresses[0]
-	if addr.InstanceId == nil {
-		return nil, fmt.Errorf("InstanceId is nil")
-	}
-	if addr.AssociationId == nil {
-		return nil, fmt.Errorf("AssociationId is nil")
-	}
 	if addr.AllocationId == nil {
-		return nil, fmt.Errorf("AllocationId is nil")
+		return nil, fmt.Errorf("Allocation ID is nil")
 	}
 
-	// get identity document of current ec2 instance
+	// get identity document of current EC2 instance
 	ident, err := svc.ec2metadata.GetInstanceIdentityDocument()
 	if err != nil {
 		return nil, fmt.Errorf("error getting instance identity document: %v", err)
@@ -136,7 +130,7 @@ func (svc awsSvc) associateAddr(allocation, instance string) error {
 		InstanceId:   aws.String(instance),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to associate address: %w", err)
+		return fmt.Errorf("failed to associate Elastic IP: %w", err)
 	}
 	return nil
 }
@@ -147,7 +141,7 @@ func (svc awsSvc) disassociateAddr(associationID string) error {
 		AssociationId: aws.String(associationID),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to disassociate address: %w", err)
+		return fmt.Errorf("failed to disassociate Elastic IP: %w", err)
 	}
 	return nil
 }

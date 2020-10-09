@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -35,7 +36,17 @@ func main() {
 	// start a ticker at 10s intervals
 	t := time.NewTicker(10 * time.Second)
 
+	// configure and run web server for health check,
+	// we don't care about any errors as the healthcheck caller
+	// should interpret this as fatal
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		w.Write([]byte("ok"))
+	})
+	go http.ListenAndServe(":8081", nil)
+
 	log.Printf("service started, will attempt to allocate Elastic IP: %s to current instance every 10s", ip)
+	log.Printf("health check registered on localhost:8081/healthz")
 
 	for {
 		select {

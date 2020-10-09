@@ -16,6 +16,8 @@ kind: Pod
 metadata:
   name: public-service
 spec:
+  securityContext:
+    runAsUser: 2000
   containers:
   - name: public-service
     image: public-service
@@ -23,6 +25,14 @@ spec:
     image: <REPO>/elasticipd
     command:
     - elasticipd
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8081
+      initialDelaySeconds: 5
+      periodSeconds: 3
+	ports:
+	- containerPort: 8081
     env:
     - name: ELASTIC_IP
       value: "1.1.1.1"

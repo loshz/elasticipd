@@ -31,8 +31,8 @@ spec:
         port: 8081
       initialDelaySeconds: 5
       periodSeconds: 3
-	ports:
-	- containerPort: 8081
+    ports:
+    - containerPort: 8081
     env:
     - name: ELASTIC_IP
       value: "1.1.1.1"

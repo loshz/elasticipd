@@ -25,7 +25,7 @@ spec:
     - elasticipd
     env:
     - name: ELASTIC_IP
-	  value: "1.1.1.1"
-	- name: AWS_REGION
-	  value: "eu-west-1"
+      value: "1.1.1.1"
+    - name: AWS_REGION
+      value: "eu-west-1"
 ```

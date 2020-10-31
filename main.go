@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	envElasticIP = "ELASTIC_IP"
-	envAWSRegion = "AWS_REGION"
+	envElasticIP    = "ELASTIC_IP"
+	envAWSRegion    = "AWS_REGION"
+	envPollInterval = "POLL_INTERVAL"
 )
 
 func main() {
@@ -28,13 +29,16 @@ func main() {
 		log.Fatalf("missing aws region: %s", envAWSRegion)
 	}
 
+	// parse poll interval
+	poll, err := time.ParseDuration(os.Getenv(envPollInterval))
+	if err != nil {
+		log.Fatalf("invalid poll interval: %s", poll)
+	}
+
 	// configure a channel to listen for exit signals in order to perform
 	// a graceful shutdown
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
-
-	// start a ticker at 10s intervals
-	t := time.NewTicker(10 * time.Second)
 
 	// configure and run web server for health check,
 	// we don't care about any errors as the healthcheck caller
@@ -44,9 +48,11 @@ func main() {
 		w.Write([]byte("ok"))
 	})
 	go http.ListenAndServe(":8081", nil)
-
-	log.Printf("service started, will attempt to allocate Elastic IP: %s to current instance every 10s", ip)
 	log.Printf("health check registered on localhost:8081/healthz")
+
+	// start a ticker at `poll` intervals
+	t := time.NewTicker(poll)
+	log.Printf("service started, will attempt to allocate Elastic IP %s to current instance every %s", ip, poll)
 
 	for {
 		select {

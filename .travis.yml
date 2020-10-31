@@ -5,6 +5,6 @@ dist: focal
 services:
 - docker
 script:
-- docker build --tag syscll/elasticipd .
+- docker build --tag syscll/elasticipd . || travis_terminate 1
 notifications:
   email: false

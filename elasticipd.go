@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/rs/zerolog/log"
 )
 
 // assignElasticIP configures an AWS session and attempts to disassociate the
@@ -30,7 +30,7 @@ func assignElasticIP(region, ip string, shutdown bool) error {
 
 	// if the Elastic IP is already associated to the current EC2 instance, skip
 	if assc.skippable && !shutdown {
-		log.Printf("Elastic IP: %s associated to current instance: %s", ip, assc.instance)
+		log.Info().Msgf("Elastic IP: %s associated to current instance: %s", ip, assc.instance)
 		return nil
 	}
 
@@ -39,7 +39,7 @@ func assignElasticIP(region, ip string, shutdown bool) error {
 		if err := svc.disassociateAddr(assc.id); err != nil {
 			return fmt.Errorf("error disassociating Elastic IP: %w", err)
 		}
-		log.Printf("successfully disassociated Elastic IP: %s from instance: %s", ip, assc.instance)
+		log.Info().Msgf("successfully disassociated Elastic IP: %s from instance: %s", ip, assc.instance)
 	}
 
 	// don't associate the Elastic IP if shutting down
@@ -47,7 +47,7 @@ func assignElasticIP(region, ip string, shutdown bool) error {
 		if err := svc.associateAddr(assc.allocation, assc.instance); err != nil {
 			return fmt.Errorf("error associating Elastic IP: %w", err)
 		}
-		log.Printf("successfully associated Elastic IP: %s to instance: %s", ip, assc.instance)
+		log.Info().Msgf("successfully associated Elastic IP: %s to instance: %s", ip, assc.instance)
 	}
 
 	return nil
@@ -105,7 +105,7 @@ func (svc awsSvc) describeAddr(ip string) (*association, error) {
 	// check for valid Allocation ID
 	addr := res.Addresses[0]
 	if addr.AllocationId == nil {
-		return nil, fmt.Errorf("Allocation ID is nil")
+		return nil, fmt.Errorf("allocation_id is nil")
 	}
 
 	// get identity document of current EC2 instance

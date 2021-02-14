@@ -1,4 +1,4 @@
-name: build
+name: ci
 
 on:
   push:
@@ -17,3 +17,11 @@ jobs:
         with:
           go-version: '1.15'
       - run: make test
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.36

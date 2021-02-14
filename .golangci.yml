@@ -1,0 +1,22 @@
+run:
+  # Timeout for analysis
+  timeout: 2m
+
+  # Enables skipping of directories:
+  #   vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
+  skip-dirs-use-default: true
+
+linters:
+  # Disable all default linter so we can specify our own
+  disable-all: true
+
+  # Enable only the following linters
+  # https://golangci-lint.run/usage/linters/
+  enable:
+    - gofmt
+    - golint
+    - gosimple
+    - govet
+    - bodyclose
+    - staticcheck
+    - unused

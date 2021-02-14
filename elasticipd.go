@@ -105,7 +105,7 @@ func (svc awsSvc) describeAddr(ip string) (*association, error) {
 	// check for valid Allocation ID
 	addr := res.Addresses[0]
 	if addr.AllocationId == nil {
-		return nil, fmt.Errorf("allocation_id is nil")
+		return nil, fmt.Errorf("Allocation ID is nil")
 	}
 
 	// get identity document of current EC2 instance

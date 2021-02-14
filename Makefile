@@ -2,7 +2,7 @@
 BUILD_NUMBER ?= dev
 CONTAINER_IMG ?= quay.io/syscll/elasticipd
 DOCKER ?= sudo docker
-GO_TEST_FLAGS ?= -cover -v
+GO_TEST_FLAGS ?= -v -failfast
 
 define HELP_TXT
 Use `make <target>` where <target> is one of:

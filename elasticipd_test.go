@@ -72,7 +72,7 @@ func TestDescribeAddress(t *testing.T) {
 			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
 				return &ec2.DescribeAddressesOutput{
 					Addresses: []*ec2.Address{
-						&ec2.Address{
+						{
 							InstanceId:    aws.String("1"),
 							AssociationId: aws.String("2"),
 							AllocationId:  nil,
@@ -88,7 +88,7 @@ func TestDescribeAddress(t *testing.T) {
 			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
 				return &ec2.DescribeAddressesOutput{
 					Addresses: []*ec2.Address{
-						&ec2.Address{
+						{
 							InstanceId:    aws.String("1"),
 							AssociationId: aws.String("2"),
 							AllocationId:  aws.String("3"),
@@ -116,7 +116,7 @@ func TestDescribeAddress(t *testing.T) {
 			DescribeFunc: func(*ec2.DescribeAddressesInput) (*ec2.DescribeAddressesOutput, error) {
 				return &ec2.DescribeAddressesOutput{
 					Addresses: []*ec2.Address{
-						&ec2.Address{
+						{
 							InstanceId:    aws.String("2"),
 							AssociationId: aws.String("2"),
 							AllocationId:  aws.String("3"),

@@ -14,9 +14,7 @@ linters:
   # https://golangci-lint.run/usage/linters/
   enable:
     - gofmt
-    - golint
     - gosimple
     - govet
-    - bodyclose
     - staticcheck
     - unused

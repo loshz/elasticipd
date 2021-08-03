@@ -1,59 +1,51 @@
 package main
 
 import (
-	"context"
+	"flag"
 	"net"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog/log"
 )
 
 const (
-	envElasticIP    = "ELASTIC_IP"
-	envAWSRegion    = "AWS_REGION"
-	envPollInterval = "POLL_INTERVAL"
-	envPort         = "PORT"
-)
-
-var (
-	// Prometheus gauge for storing number of failed ip associations
-	criticalError = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "elasticipd_critical_error",
-		Help: "Set to 0 if OK or 1 if there is an error associating/disassociating the Elastic IP",
-	})
+	service = "elasticipd"
+	version = "dev"
 )
 
 func main() {
-	// check for valid Elastic IP
-	ip := net.ParseIP(os.Getenv(envElasticIP))
-	if ip.To4() == nil {
-		log.Fatal().Msgf("invalid ipv4: %s", ip)
+	eIP := flag.String("elastic-ip", "", "Elastic IP address to associate")
+	interval := flag.String("interval", "30s", "Attempt association every interval")
+	port := flag.Int("port", 8081, "Local HTTP server port")
+	reassoc := flag.Bool("reassoc", true, "Allow Elastic IP to be reassociated without failure")
+	region := flag.String("region", "", "AWS region hosting the Elastic IP and EC2 instance")
+	retries := flag.Int("retries", 3, "Maximum number of association retries before fatally exiting")
+	flag.Parse()
+
+	// check required flags are set
+	if *eIP == "" || *region == "" {
+		flag.Usage()
+		os.Exit(1)
 	}
 
-	// check for valid AWS region
-	region := os.Getenv(envAWSRegion)
-	if region == "" {
-		log.Fatal().Msgf("missing aws region: %s", envAWSRegion)
+	// configure global logger defaults
+	log.Logger = log.Logger.With().Fields(map[string]interface{}{
+		"service": service,
+		"version": version,
+	}).Logger()
+
+	// check Elastic IP is valid ipv4
+	if net.ParseIP(*eIP).To4() == nil {
+		log.Fatal().Msgf("invalid ipv4: %q", *eIP)
 	}
 
 	// parse poll interval
-	poll, err := time.ParseDuration(os.Getenv(envPollInterval))
+	pollInt, err := time.ParseDuration(*interval)
 	if err != nil {
-		log.Fatal().Msgf("invalid poll interval: %s", poll)
-	}
-
-	// parse port
-	port := 8081
-	if p := os.Getenv(envPort); p != "" {
-		port, err = strconv.Atoi(p)
-		if err != nil {
-			log.Fatal().Msgf("invalid port: %s: %v", p, err)
-		}
+		log.Fatal().Msgf("invalid poll interval: %q", *interval)
 	}
 
 	// configure a channel to listen for exit signals in order to perform
@@ -62,43 +54,73 @@ func main() {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	// start the local http server
-	srv := startHTTP(port)
+	go startHTTP(*port)
+
+	// configure aws services
+	svc, err := newSvc(*region)
+	if err != nil {
+		log.Fatal().Err(err).Msg("error configuring aws services")
+	}
+
+	// start the main thread
+	log.Info().Msg("service started")
+	poll(stop, pollInt, svc, *eIP, *reassoc, *retries)
+}
+
+func poll(stop chan os.Signal, interval time.Duration, s svc, eIP string, reassoc bool, maxRetries int) {
+	var retries int
 
 	// start a ticker at given intervals
-	t := time.NewTicker(poll)
-	log.Info().Msgf("service started, will attempt to allocate Elastic IP %s to current instance every %s", ip, poll)
-
+	t := time.NewTicker(interval)
 	for {
+		if retries == maxRetries {
+			log.Fatal().Msg("maximum amount of retries reached, exiting")
+		}
+
 		select {
 		case <-stop:
 			log.Info().Msg("received stop signal, attempting graceful shutdown")
 
-			// stop ticker
-			t.Stop()
-
-			// passing shutdown = true will ensure the Elastic IP is disassociated only
-			if err := assignElasticIP(region, ip.String(), true); err != nil {
-				log.Fatal().Err(err).Msg("error shutting down gracefully")
+			// attempt to disassociate the address before shutting down
+			assoc, err := s.getAssociation(eIP)
+			if err != nil {
+				log.Fatal().Err(err).Msg("error describing elastic ip")
+			}
+			if err := s.disassociateAddr(assoc); err != nil {
+				log.Fatal().Err(err).Msg("error disassociating elastic ip")
 			}
 
-			// gracefully shutdown local http server
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			if err := srv.Shutdown(ctx); err != nil {
-				cancel()
-				log.Fatal().Err(err).Msg("error shuting down http server")
-			}
-
+			log.Info().Str("instance_id", assoc.instanceID).Msg("elastic ip disassociated from current instance")
 			os.Exit(0)
 		case <-t.C:
-			// passing shutdown = false will ensure the Elastic IP is disassociated from any
-			// current associations, and associated to the current instance
-			if err := assignElasticIP(region, ip.String(), false); err != nil {
-				criticalError.Set(1)
-				log.Error().Err(err).Msg("assigning Elastic IP")
+			// get elastic ip association and current instance details
+			assoc, err := s.getAssociation(eIP)
+			if err != nil {
+				log.Error().Err(err).Msg("error describing elastic ip")
+				retries++
+				continue
+			}
+			ins, err := s.getInstanceDetails()
+			if err != nil {
+				log.Error().Err(err).Msg("error getting instance details")
+				retries++
+				continue
 			}
 
-			// reset the error counter on success
-			criticalError.Set(0)
+			// if the Elastic IP is already associated to the current EC2 instance, skip
+			if assoc.instanceID == ins.id {
+				continue
+			}
+
+			// attempt to associate elastic ip
+			if err := s.associateAddr(assoc, ins, reassoc); err != nil {
+				log.Error().Err(err).Msg("error associating elastic ip")
+				retries++
+				continue
+			}
+
+			retries = 0
+			log.Info().Str("instance_id", assoc.instanceID).Msg("elastic ip associated to current instance")
 		}
 	}
 }

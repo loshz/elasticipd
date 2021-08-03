@@ -12,7 +12,7 @@ import (
 
 // startHTTP creates and starts a local webserver used to expose a health
 // check and prometheus metrics
-func startHTTP(port int) *http.Server {
+func startHTTP(port int) {
 	// configure http server with 10s timeoutes
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
@@ -23,17 +23,14 @@ func startHTTP(port int) *http.Server {
 	// configure a health check handler
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
 	})
 
 	// register and configure a prometheus metrics handler
-	prometheus.MustRegister(criticalError)
+	prometheus.MustRegister(criticalErrors)
 	http.Handle("/metrics", promhttp.Handler())
 
 	// we don't care about errors from the server as the caller of the health check
 	// should interpret failed responses as fatal
-	go srv.ListenAndServe()
 	log.Info().Msgf("started local http server on :%d", port)
-
-	return srv
+	srv.ListenAndServe()
 }

@@ -5,7 +5,7 @@ As it is now common practice to run applications on top of a container-orchestra
 `elasticipd` automatically associates an [Elastic IP](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html) address to the AWS EC2 instance running this service. It is designed to run as a sidecar container alongisde a service that requires a public IP address.
 
 ## Usage
-As `elasticipd` is currently configured to use AWS [Instance Roles](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html), the host will need to have and EC2 Policy with at least the following actions: `DisassociateAddress`, `DescribeInstanceAttribute`, `AssociateAddress` and `DisassociateAddress`.
+As `elasticipd` is currently configured to use AWS [Instance Roles](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html), the host will need to have and EC2 Policy with at least the following actions: `DescribeInstances`, `DescribeInstanceAttribute`, `AssociateAddress` and `DisassociateAddress`.
 
 The service is configured by setting the following command line flags:
 ```

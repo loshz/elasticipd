@@ -1,7 +1,7 @@
 #################
 # Build stage 0 #
 #################
-FROM golang:1.16-alpine3.14
+FROM golang:1.17-alpine3.14
 
 # Create work dir
 WORKDIR $GOPATH/src/github.com/syscll/elasticipd

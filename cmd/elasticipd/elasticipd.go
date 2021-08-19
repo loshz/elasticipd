@@ -15,7 +15,7 @@ var (
 	// Prometheus gauge for storing number of failed elastic ip operations
 	criticalErrors = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: service,
+			Namespace: "elasticipd",
 			Name:      "critical_error_count",
 			Help:      "Counter representing the number of errors associating/disassociating the Elastic IP",
 		},

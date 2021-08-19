@@ -11,10 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	service = "elasticipd"
-	version = "dev"
-)
+var version = "dev"
 
 func main() {
 	eIP := flag.String("elastic-ip", "", "Elastic IP address to associate")
@@ -33,7 +30,7 @@ func main() {
 
 	// configure global logger defaults
 	log.Logger = log.Logger.With().Fields(map[string]interface{}{
-		"service": service,
+		"service": "elasticipd",
 		"version": version,
 	}).Logger()
 

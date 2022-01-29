@@ -1,7 +1,7 @@
 #################
 # Build stage 0 #
 #################
-FROM golang:1.17-alpine3.14
+FROM golang:1.17-alpine3.15
 
 # Create work dir
 WORKDIR $GOPATH/src/github.com/syscll/elasticipd
@@ -19,7 +19,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go install \
 #################
 # Build stage 1 #
 #################
-FROM alpine:3.14
+FROM alpine:3.15
 COPY --from=0 /go/bin/elasticipd /bin/elasticipd
 USER 2000:2000
 CMD ["/bin/elasticipd"]

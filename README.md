@@ -36,7 +36,7 @@ spec:
   - name: public-service
     image: public-service
   - name: elasticipd
-    image: quay.io/syscll/elasticipd:v2.1.0
+    image: quay.io/syscll/elasticipd:v2.2.0
     command: ["elasticipd"]
     args: [
         "-elastic-ip=<elastic_ip>",

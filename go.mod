@@ -1,4 +1,4 @@
-module github.com/syscll/elasticipd
+module github.com/loshz/elasticipd
 
 go 1.17
 

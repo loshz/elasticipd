@@ -20,9 +20,9 @@ jobs:
       # Log in to Quay.io via Docker
       - uses: docker/login-action@v1
         with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       # Push Docker image to Quay.io
       - run: BUILD_NUMBER=${{ env.RELEASE_VERSION }} DOCKER=docker make docker-push

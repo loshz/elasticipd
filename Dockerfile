@@ -4,7 +4,7 @@
 FROM golang:1.17-alpine3.15
 
 # Create work dir
-WORKDIR $GOPATH/src/github.com/syscll/elasticipd
+WORKDIR $GOPATH/src/github.com/loshz/elasticipd
 
 # Copy required files
 COPY ./cmd/elasticipd .
@@ -14,7 +14,7 @@ COPY go.sum .
 # Build binary
 ARG BUILD_NUMBER
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go install \
-	--ldflags="-X github.com/syscll/elasticipd/main.version=$BUILD_NUMBER" .
+	--ldflags="-X github.com/loshz/elasticipd/main.version=$BUILD_NUMBER" .
 
 #################
 # Build stage 1 #

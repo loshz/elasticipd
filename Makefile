@@ -1,6 +1,6 @@
 # Configurable env vars
 BUILD_NUMBER ?= dev
-REGISTRY ?= quay.io/syscll/elasticipd
+REGISTRY ?= ghcr.io/loshz/elasticipd
 DOCKER ?= sudo docker
 GO_TEST_FLAGS ?= -v -failfast
 

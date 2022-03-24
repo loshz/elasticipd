@@ -1,5 +1,5 @@
 # elasticipd
-[![Build Status](https://github.com/loshz/elasticipd/workflows/ci/badge.svg)](https://github.com/loshz/elasticipd/actions) [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Quay.io](https://img.shields.io/badge/container-ghcr.io-red)](https://github.com/users/loshz/packages/container/package/elasticipd)
+[![Build Status](https://github.com/loshz/elasticipd/workflows/ci/badge.svg)](https://github.com/loshz/elasticipd/actions) [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![ghcr.io](https://img.shields.io/badge/container-ghcr.io-red)](https://github.com/users/loshz/packages/container/package/elasticipd)
 
 As it is now common practice to run applications on top of a container-orchestration platforms, such as Kubernetes, there is no guarantee that a service will always run on the same host. This can cause problems when a service requiring a public IP address gets rescheduled.
 `elasticipd` automatically associates an [Elastic IP](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html) address to the AWS EC2 instance running this service. It is designed to run as a sidecar container alongisde a service that requires a public IP address.

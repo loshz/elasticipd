@@ -17,7 +17,7 @@ jobs:
       # Build Docker image
       - run: BUILD_NUMBER=${{ env.RELEASE_VERSION }} DOCKER=docker make docker-build
 
-      # Log in to Quay.io via Docker
+      # Log in to ghcr.io via Docker
       - uses: docker/login-action@v1
         with:
           registry: ghcr.io
